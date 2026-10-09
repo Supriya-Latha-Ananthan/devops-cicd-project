@@ -1,8 +1,8 @@
+
 pipeline {
     agent any
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -34,5 +34,20 @@ pipeline {
             }
         }
 
+        stage('Deploy to EC2') {
+            steps {
+                withCredentials([sshUserPrivateKey(
+                    credentialsId: 'ec2-ssh-key',
+                    keyFileVariable: 'SSH_KEY',
+                    usernameVariable: 'SSH_USER'
+                )]) {
+                    bat '''
+                    ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=yes %SSH_USER%@65.1.92.97 "sudo docker pull ghcr.io/supriya-latha-ananthan/devops-cicd-app:%BUILD_NUMBER% && sudo docker stop devops-app || true"
+                    ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=yes %SSH_USER%@65.1.92.97 "sudo docker rm devops-app || true"
+                    ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=yes %SSH_USER%@65.1.92.97 "sudo docker run -d --name devops-app --restart unless-stopped -p 5000:5000 ghcr.io/supriya-latha-ananthan/devops-cicd-app:%BUILD_NUMBER%"
+                    '''
+                }
+            }
+        }
     }
 }
