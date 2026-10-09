@@ -52,10 +52,13 @@ pipeline {
                     if errorlevel 1 exit /b 1
 
                     icacls "%DEPLOY_KEY%" /inheritance:r
-                    if errorlevel 1 exit /b 1
+                    if errorlevel 1 goto deploy_failed
 
                     icacls "%DEPLOY_KEY%" /grant:r "SYSTEM:F"
-                    if errorlevel 1 exit /b 1
+                    if errorlevel 1 goto deploy_failed
+
+                    ssh -i "%DEPLOY_KEY%" -o UserKnownHostsFile=C:/Windows/System32/config/systemprofile/.ssh/known_hosts -o StrictHostKeyChecking=yes %SSH_USER%@65.1.92.97 "TOKEN=$(aws ssm get-parameter --name /devops/ghcr/token --with-decryption --query Parameter.Value --output text --region ap-south-1) && echo \"$TOKEN\" | sudo docker login ghcr.io -u Supriya-Latha-Ananthan --password-stdin && unset TOKEN"
+                    if errorlevel 1 goto deploy_failed
 
                     ssh -i "%DEPLOY_KEY%" -o UserKnownHostsFile=C:/Windows/System32/config/systemprofile/.ssh/known_hosts -o StrictHostKeyChecking=yes %SSH_USER%@65.1.92.97 "sudo docker pull ghcr.io/supriya-latha-ananthan/devops-cicd-app:%BUILD_NUMBER%"
                     if errorlevel 1 goto deploy_failed
