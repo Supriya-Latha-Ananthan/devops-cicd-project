@@ -8,3 +8,7 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+venv/
+__pycache__/
+*.pyc
